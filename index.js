@@ -53,10 +53,29 @@ async function run(){
         res.send(result); 
       })
 
+      app.get('/reviews', async(req, res) => {
+        const email = req.query.email;
+        const query = {userEmail: email}
+        const cursor = await reviewCollection.find(query).sort({date: -1}).toArray();
+        res.send(cursor);
+      })
+
       app.post('/reviews', async(req, res) => {
        const reviews = req.body;
        const result = await reviewCollection.insertOne(reviews);
        res.send(result);
+      })
+
+      app.put('/reviews/:id', async(req, res) => {
+        const id = req.params.id;
+        const filter = { _id: ObjectId(id)}
+        const updatedDoc = {
+          $set: {
+            message: message
+          }
+        }
+        const cursor = await reviewCollection.updateOne(filter, updatedDoc);
+        res.send(cursor)
       })
       
     }
