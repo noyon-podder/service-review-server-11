@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 
@@ -23,6 +24,7 @@ async function run(){
     try{
       const servicesCollection = client.db('justice').collection('services');
       const reviewCollection = client.db('justice').collection('reviews');
+      const usersCollection = client.db('justice').collection('users');
   
      app.get('/homeService', async(req, res) => {
         const query = {}
@@ -51,6 +53,24 @@ async function run(){
         res.send(result);
       }) 
 
+      app.get('/jwt', async(req, res) => {
+        const email = req.query.email;
+        const query = {email: email}
+        const user = await usersCollection.findOne(query)
+
+        if(user){
+          const token = jwt.sign({email}, process.env.ACCESS_TOKEN, {expiresIn: '1d'})
+          return res.send({accessToken: token})
+        }
+        res.status(401).send({accessToken: ''})
+      })
+
+      app.post('/users', async (req, res) => {
+        const user = req.body;
+        console.log(user)
+        const result = await usersCollection.insertOne(user);
+        res.send(result);
+      })
       //review server 
       app.get('/reviews/:id', async(req, res) => {
         const id = req.params.id;
@@ -61,6 +81,7 @@ async function run(){
 
       app.get('/reviews', async(req, res) => {
         const email = req.query.email;
+        console.log('User token from server', req.headers.authorization)
         const query = {userEmail: email}
         const cursor = await reviewCollection.find(query).sort({date: -1}).toArray();
         res.send(cursor);
