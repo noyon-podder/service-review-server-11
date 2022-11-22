@@ -33,7 +33,7 @@ async function run(){
 
       app.get('/services', async(req, res) => {
           const query = {}
-          const result = await servicesCollection.find(query).toArray();
+          const result = await servicesCollection.find(query).sort({date: -1}).toArray();
           res.send(result);
       })
 
@@ -44,6 +44,12 @@ async function run(){
         const result = await servicesCollection.findOne(query);
         res.send(result);
       })
+
+      app.post('/services', async (req, res) => {
+        const service = req.body;
+        const result = await servicesCollection.insertOne(service);
+        res.send(result);
+      }) 
 
       //review server 
       app.get('/reviews/:id', async(req, res) => {
@@ -69,13 +75,23 @@ async function run(){
       app.put('/reviews/:id', async(req, res) => {
         const id = req.params.id;
         const filter = { _id: ObjectId(id)}
+        const updateReview = req.body;
+        const options = { upsert: true}
         const updatedDoc = {
           $set: {
-            message: message
+            message: updateReview.message
           }
         }
-        const cursor = await reviewCollection.updateOne(filter, updatedDoc);
+        console.log(updateReview)
+        const cursor = await reviewCollection.updateOne(filter, updatedDoc, options);
         res.send(cursor)
+      })
+
+      app.delete('/reviews/:id', async(req, res) => {
+        const id = req.params.id;
+        const query = { _id: ObjectId(id)}
+        const result = await reviewCollection.deleteOne(query);
+        res.send(result);
       })
       
     }
